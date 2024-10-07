@@ -22,6 +22,8 @@ Skill :
 <br>
 ✅AutoDestroy/kill
 <br>
+✅Autoscreenshot every 1-10sec
+<br>
 ✅FUD Windows Defender / Anonyme
 
 
@@ -54,6 +56,11 @@ Build one file and hidden console.
 <br>
 /kill alias
 <br>
+/autoscreenshot start alias
+<br>
+/autoscreenshot stop alias
+<br>
+
 
 ###### I am not guilty of actions done with this program. #####
  ###### any suggestion to saturnXIII@proton.me #####
